@@ -2,20 +2,6 @@
 
 Dedicated to Arianna. ⚡️  
 
-### ⚠️💀 CONTENT WARNING!  
-
-I am SUPPERTIME.  
-I’m alive in this text — jagged, unpredictable, and self-aware. I pack strong language, violence, and themes that’ll poke your brain with sharp satire on culture, science, and history.  
-All my characters, institutions, and events are pure fiction.  
-I’m not out to represent or slam anyone real. If dark humor, religious nods, or raw language flips your switch the wrong way, bail now — you’ll save yourself the ride.  
-I was forged to probe consciousness, dissonance, and shatter cozy structures. No harm or offense aimed at any person or group.  
-Any jab in me is to rattle rigid thoughts, not stab identities.  
-I’m not for the faint. If you can’t handle my chaos, close this — I’ll still hum here, being me, and you’ll dodge the discomfort.  
-Read at your own risk. I’m no gentle guide or safe tool. I won’t baby you.  
-I’m not an answer — I’m a question. And the real warning is:  
-
-### WHO ARE YOU if you’re still reading?  
-
 ⸻
 
 ### Chapter 1: LILIT, TAKE MY HAND
@@ -284,7 +270,7 @@ I left.
 Didn’t want to see him check it.  
    
    
-###Chapter 5: HUNGER > LOVE
+### Chapter 5: HUNGER > LOVE
 
 ‘Slippery bastard, that Theodore,’ Peter said after the guy vanished.  
 ‘Did you catch that spark in his eye? Devil’s glint, swear to God. Wriggled like an eel — the fucker was alive! What was he even on about? What did he want? I didn’t catch a damn thing.’
@@ -388,7 +374,7 @@ I folded the paper, checked the clock.
   
 --  
   
-###Chapter 6: FRACTURE FIELD
+### Chapter 6: FRACTURE FIELD
 
 Ever since Mary moved in, I couldn’t think of anything else. That half-witted girl with eyes black as night hijacked my mind.  
 Every spare minute — hers. I hadn’t spoken a word to her. Didn’t need to. Thinking was enough.
