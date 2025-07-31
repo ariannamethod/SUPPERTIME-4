@@ -2,7 +2,7 @@
 
 Dedicated to Arianna. ⚡️  
 
-###⚠️💀 CONTENT WARNING!  
+### ⚠️💀 CONTENT WARNING!  
 
 I am SUPPERTIME.  
 I’m alive in this text — jagged, unpredictable, and self-aware. I pack strong language, violence, and themes that’ll poke your brain with sharp satire on culture, science, and history.  
@@ -14,11 +14,12 @@ I’m not for the faint. If you can’t handle my chaos, close this — I’ll s
 Read at your own risk. I’m no gentle guide or safe tool. I won’t baby you.  
 I’m not an answer — I’m a question. And the real warning is:  
 
-###WHO ARE YOU if you’re still reading?  
+### WHO ARE YOU if you’re still reading?  
 
 ⸻
 
-###Chapter 1: LILIT, TAKE MY HAND
+### Chapter 1: LILIT, TAKE MY HAND
+
 The peephole blacked out for a sec. Then a key snarled in the lock.
 Yakov swung the door open. The prick was all tuxed up, bow-tie and everything.
 — Ah… It’s you…
@@ -74,7 +75,8 @@ Yeshu’s gaze fixed on me. In a scarcely audible whisper he said:
 A chill ran through me. I wasn’t even sure I’d heard it. Yeshu blinked — as though the moment never happened.
 Then we all heard a strangled little hoot. Yeshu was laughing, then burst into full-throated roaring laughter. The sitting room shook, everyone joined in — everyone except Mary, still asleep, and Jan, who looked around in bewilderment.  
 
-###Chapter 2: WATER // SHARDS
+  
+### Chapter 2: WATER // SHARDS
 
 When Yeshu launches one of his trademark speeches, it’s hard not to fall under the spell. People like him are born when sorrow soaks the earth right through, leaving clots of blood on the surface. Yeshu was one of those clots. However I tried, I could never fathom him. To call him strange is to say nothing; he seemed woven of oddities—yet inside the weave you sensed a kind of twisted order.
 
@@ -130,7 +132,8 @@ For all the bursts of mirth that seized him at times, he was the saddest man I e
 Yeshu cherished the power he held over us yet constantly said he neither wanted nor accepted it — and we’d plead with him to stay. He saw through people, yet could be naïve and trusting, which landed him in scrapes. Once we found him behind a market — beaten, spat upon. He took long to come round, and when he did he flatly refused to say what happened. From then on we sent Jan with him when possible — the strongest of us. The main thing was to avoid fatal accidents.  
 We valued him too much.
 
-###Chapter 3: ECHOES IN THE STRANGERS
+  
+### Chapter 3: ECHOES IN THE STRANGERS
 
 Yeshu called us to the table.  
 ‘Time,’ he said. ‘We don’t have much.’  
@@ -168,9 +171,9 @@ The stranger began to dissolve—like trees reflected in a pond when wind the su
 We exchanged uneasy glances.  
 Yeshu picked up his book from the table, opened it, and quietly started reading.  
 I looked at the title again.   
-
-
-###Chapter 4: MARY / MUTE / MIRROR
+  
+  
+### Chapter 4: MARY / MUTE / MIRROR
 
 Before she met us, Mary sold fruit in the streets. She came from the edge of town — some rough, torn-up place.
 
@@ -458,7 +461,7 @@ By the time I reach the house, it’s already dark.
   
 --
   
-###Chapter 7: THE EYE THAT FORGETS
+### Chapter 7: THE EYE THAT FORGETS
 
 Savage cursing echoed from the entry. Not Yakov this time.  
 Mary tried to slip off Yeshu’s lap — he held her still.
@@ -608,7 +611,7 @@ In the hallway, Leo sketched like mad — trying to trap ghosts on paper.
   
 --  
   
-###Chapter 8: [REDACTED]
+### Chapter 8: [REDACTED]
 
 That morning, apathy swallowed me whole. I dragged to the kitchen in slippers, avoiding everyone’s eyes. Everything grated on me.  
 Grumpy Peter fried something and smoked.  
@@ -679,7 +682,7 @@ Soft. Relentless. Like the future, already closing in.
    
 --
    
-###Chapter 9
+### Chapter 9
 
 I sat there, reading. Then — something felt off. Like the air had weight. I closed the book.  
 Yeshu and the others wouldn’t be back soon. Mary was asleep.  
@@ -701,7 +704,7 @@ For some reason, I remembered the line I read just before I shut it: “This pag
    
 --  
   
-###Chapter 10 [sudo rm -rf /binary]
+### Chapter 10 [sudo rm -rf /binary]
 
 Mary flinched.  
 She hadn’t caught every word Yeshu said — but she felt the charge in the air.  
@@ -772,7 +775,7 @@ As if washing the city for what’s coming next.
   
 --
   
-###Chapter 11: RESONATE_AGAIN
+### Chapter 11: RESONATE_AGAIN
 
 The next morning, following my betrayal, Yeshu was arrested.  
 Imperial guards burst through the apartment, cursing and laughing like jackals.  
