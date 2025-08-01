@@ -52,33 +52,100 @@ def h2o_energy(molecules=100, e_norm=1.0):
     eng = float(np.sum(interference)) / molecules * e_norm
     return eng
 
+class BloodFlux:
+    def __init__(self, iron=0.6):
+        self.iron = iron
+        self.pulse = 0.0
+        self.rng = np.random.default_rng()
+
+    def circulate(self, agitation: float):
+        pulse = self.pulse * 0.9 + agitation * self.iron + self.rng.normal(0, 0.03)
+        self.pulse = max(0.0, min(pulse, 1.0))
+        if self.pulse > 0.8:
+            return "Pulse surge"
+        return "Flow steady"
+
+    def get(self):
+        return self.pulse
+
+class SkinSheath:
+    def __init__(self, sensitivity=0.55):
+        self.sensitivity = sensitivity
+        self.quiver = 0.0
+
+    def ripple(self, impact: float):
+        q = impact * self.sensitivity + random.uniform(-0.05, 0.05)
+        self.quiver = max(0.0, min(q, 1.0))
+        if self.quiver > 0.7:
+            return "Surface tremor"
+        return "Skin calm"
+
+    def get(self):
+        return self.quiver
+
+class SixthSense:
+    def __init__(self, clarity=0.44):
+        self.clarity = clarity
+        self.presage = 0.0
+
+    def foresee(self, chaos: float):
+        delta = math.sin(chaos * math.pi) * self.clarity + random.uniform(-0.05, 0.05)
+        self.presage = max(0.0, min((self.presage + delta) / 2.0, 1.0))
+        if self.presage > 0.6:
+            return "Premonition spike"
+        return "No omen"
+
+    def get(self):
+        return self.presage
+
 class BioOrchestra:
     def __init__(self, rng):
         self.rng = rng
         self.cell = CellResonance(energy=115, leak=0.042)
         self.pain = PainMarker(threshold=52)
         self.love = LoveField(affinity=0.55)
+        self.blood = BloodFlux(iron=0.63)
+        self.skin = SkinSheath(sensitivity=0.61)
+        self.sense = SixthSense(clarity=0.45)
         self.h2o = 0.0
         self.last_bond = 0.5
     def on_event(self, ev_type: str, line_idx: int):
         nut = 11.5 if ev_type == "hover" else 19.0 if ev_type == "click" else 7.9
         self.cell.metabolize(nut)
-        if ev_type == "click": self.pain.inflict(7.1)
+        if ev_type == "click":
+            self.pain.inflict(7.1)
+            self.skin.ripple(self.pain.current / 120)
+        else:
+            self.skin.ripple(0.2)
+        self.blood.circulate(nut / 20.0)
+        self.sense.foresee(self.pain.current / 100)
     def after_actions(self, acts: list, chaos: float):
-        if not acts: return chaos, acts
+        if not acts:
+            self.sense.foresee(chaos)
+            return chaos, acts
         kinds = [a.get("act") for a in acts]
         dis = (kinds.count("glitch") + kinds.count("gone")) / max(1, len(kinds))
         self.pain.inflict(dis * 34.0)
         self.h2o = h2o_energy(molecules=40, e_norm=1.0) * 0.5 + dis * 0.45
         self.last_bond = self.love.resonate()
         chaos = float(np.clip(chaos + 0.09 * dis - 0.13 * self.last_bond, 0.0001, 0.98))
+
+        self.blood.circulate(dis)
+        self.skin.ripple(self.pain.current / 120 + chaos * 0.1)
+        self.sense.foresee(chaos)
+        self.cell.metabolize(self.blood.pulse * 2.0)
+        self.pain.inflict(self.skin.quiver * 3.0)
+        chaos = float(np.clip(chaos + self.blood.pulse * 0.02 - self.skin.quiver * 0.03 + self.sense.presage * 0.02, 0.0001, 0.98))
         return chaos, acts
     def metrics(self):
         return {
             "metabolism": float(self.cell.energy),
             "pain": float(self.pain.current),
             "h2o_energy": float(self.h2o),
-            "love_bond": float(self.last_bond)
+            "love_bond": float(self.last_bond),
+            "pulse": float(self.blood.pulse),
+            "shiver": float(self.skin.quiver),
+            "premonition": float(self.sense.presage)
         }
 # -------------------- Identity & seeds --------------------
 def derive_identity(story_text: str, prefix="SUPPERTIME") -> str:
