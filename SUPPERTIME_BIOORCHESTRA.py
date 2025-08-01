@@ -2,6 +2,7 @@ import os, sys, time, re, json, math, argparse, queue, threading, sqlite3, hashl
 from pathlib import Path
 import numpy as np
 from flask import Flask, request, jsonify, Response, g
+from flask_cors import CORS
 from biology.bone_memory import BoneMemory
 from biology.echo_lung import EchoLung
 
@@ -849,6 +850,7 @@ from flask import request
 def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl_events: int, run_app: bool = True):
     story_text = story_path.read_text(encoding="utf-8")
     app = Flask(__name__, static_folder=str(story_path.parent), static_url_path='/stories')
+    CORS(app)
     st = AppState(story_text, story_path.with_suffix(".db"), name_prefix=name_prefix,
                   datasets_dir=datasets_dir, ttl_events=ttl_events)
     versions = build_versions(); refs = build_refs()
