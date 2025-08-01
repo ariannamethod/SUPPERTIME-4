@@ -823,6 +823,26 @@ class AppState:
                     self.last_error_ts = time.time()
                     logging.error("Re-ingest error:\n" + traceback.format_exc())
 
+    def check_repo(self):
+        """Scan the repository once and re-ingest if anything changed."""
+        if not self._file_sha:
+            self._file_sha = self._scan_repo()
+            return
+        cur = self._scan_repo()
+        changed = [p for p, s in cur.items() if self._file_sha.get(p) != s]
+        if not changed:
+            return
+        for p in changed:
+            self._file_sha[p] = cur[p]
+            logging.info(f"Repo change detected: {p}")
+        try:
+            self._ingest_story_once()
+            self._ingest_datasets_once()
+            self._cache_chunks()
+        except Exception:
+            self.last_error_ts = time.time()
+            logging.error("Re-ingest error:\n" + traceback.format_exc())
+
 # ---------------- Flask app orchestration ----------------
 from flask import request
 
@@ -856,6 +876,7 @@ def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl
 
     @app.get("/")
     def root():
+        st.check_repo()
         motd = st.glitchmotd().motd()
         story_html = "<pre>" + html_escape(st.story_text) + "</pre>"
         disc_html  = html_escape(st.disclaimer_auto())
