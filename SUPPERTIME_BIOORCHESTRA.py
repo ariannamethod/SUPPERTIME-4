@@ -1,11 +1,23 @@
-import os, sys, time, re, json, math, argparse, queue, threading, sqlite3, hashlib, logging, random
+import os
+import sys
+import time
+import re
+import json
+import math
+import argparse
+import queue
+import threading
+import sqlite3
+import hashlib
+import logging
+import random
 from pathlib import Path
 import numpy as np
 from flask import Flask, request, jsonify, Response, g
 
 logging.basicConfig(filename='suppertime.log', level=logging.INFO, format='%(asctime)s %(message)s')
 
-# ---------------------------- BIO-UTILS INLINE ----------------------------
+# ---------------------------- BIO-UTILS MONOLITH ----------------------------
 import math as _math
 class CellResonance:
     def __init__(self, energy=100, leak=0.05):
@@ -15,7 +27,11 @@ class CellResonance:
     def metabolize(self, input_nutrients: float):
         drift = self.rng.normal(0, 0.1)
         self.energy = (self.energy * (1 - self.leak) + input_nutrients + drift)
-        if self.energy < 0: self.energy = 0.0
+        if self.energy < 0:
+            self.energy = 0.0
+
+    def get(self):
+        return self.energy
 class PainMarker:
     def __init__(self, threshold=50):
         self.threshold = float(threshold)
@@ -26,6 +42,9 @@ class PainMarker:
         if self.current > self.threshold:
             return "Pain thunderstrike"
         return "Resonance holds"
+
+    def get(self):
+        return self.current
 class LoveField:
     def __init__(self, affinity=0.5):
         self.affinity = float(affinity)
@@ -34,6 +53,9 @@ class LoveField:
         bond = self.affinity * other + random.uniform(-0.1, 0.1)
         bond = max(min(bond, 1.0), 0.0)
         return bond
+
+    def get(self):
+        return self.affinity
 def h2o_energy(molecules=100, e_norm=1.0):
     bonds = np.random.normal(2.8, 0.2, molecules)
     interference = np.sin(bonds * np.pi / 3)
