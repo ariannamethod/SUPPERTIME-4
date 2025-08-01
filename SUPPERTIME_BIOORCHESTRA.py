@@ -1,4 +1,4 @@
-import os, sys, time, re, json, math, argparse, queue, threading, sqlite3, hashlib, logging, random
+import os, sys, time, re, json, math, argparse, queue, threading, sqlite3, hashlib, logging, random, traceback, zlib
 from pathlib import Path
 import numpy as np
 from flask import Flask, request, jsonify, Response, g
@@ -108,35 +108,35 @@ class ESN:
     def __init__(self, input_dim, hidden_dim, output_dim,
                  spectral=0.9, leak=0.2, lam=0.999, seed=1):
         rng = np.random.default_rng(seed)
-        Win = (rng.standard_normal((hidden_dim, input_dim)).astype(np.float32) * 0.5)
-        b   = (rng.standard_normal((hidden_dim,)).astype(np.float32) * 0.1)
-        W   = (rng.standard_normal((hidden_dim, hidden_dim)).astype(np.float32) * 0.1)
+        Win = (rng.standard_normal((hidden_dim, input_dim)).astype(np.float16) * 0.5)
+        b   = (rng.standard_normal((hidden_dim,)).astype(np.float16) * 0.1)
+        W   = (rng.standard_normal((hidden_dim, hidden_dim)).astype(np.float16) * 0.1)
         eig = float(np.abs(np.linalg.eigvals(W)).max())
         W   = (W / (eig + 1e-6)) * spectral
         self.Win, self.W, self.b = Win, W, b
-        self.h = np.zeros((hidden_dim,), np.float32)
-        self.Wout = np.zeros((output_dim, hidden_dim), np.float32)
-        self.P = np.eye(hidden_dim, dtype=np.float32) * 100.0
-        self.leak, self.lam = np.float32(leak), np.float32(lam)
+        self.h = np.zeros((hidden_dim,), np.float16)
+        self.Wout = np.zeros((output_dim, hidden_dim), np.float16)
+        self.P = np.eye(hidden_dim, dtype=np.float16) * 100.0
+        self.leak, self.lam = np.float16(leak), np.float16(lam)
         self._rng = rng
 
-    def _tanh(self, x): return np.tanh(x).astype(np.float32)
+    def _tanh(self, x): return np.tanh(x).astype(np.float16)
     def step(self, u):
         pre = self.Win @ u + self.W @ self.h + self.b
         self.h = (1.0 - self.leak) * self.h + self.leak * self._tanh(pre)
         return self.h
-    def logits(self): return (self.Wout @ self.h).astype(np.float32)
+    def logits(self): return (self.Wout @ self.h).astype(np.float16)
     def proba(self, temp=1.0):
         z = self.logits() / max(1e-6, temp); z -= z.max()
-        e = np.exp(z, dtype=np.float32); return e / (e.sum() + 1e-9)
+        e = np.exp(z, dtype=np.float16); return e / (e.sum() + 1e-9)
     def rls(self, target_idx: int):
-        y = np.zeros((self.Wout.shape[0],), np.float32); y[target_idx] = 1.0
+        y = np.zeros((self.Wout.shape[0],), np.float16); y[target_idx] = 1.0
         phi = self.h; Pphi = self.P @ phi
         denom = self.lam + (phi @ Pphi); k = Pphi / denom
         err = y - (self.Wout @ phi); self.Wout += np.outer(err, k)
         self.P = (self.P - np.outer(k, Pphi)) / self.lam
     def storm_reset(self, scale=0.13):
-        self.h = self.h * (1 - scale) + self._rng.standard_normal(self.h.shape).astype(np.float32) * scale
+        self.h = self.h * (1 - scale) + self._rng.standard_normal(self.h.shape).astype(np.float16) * scale
 
 # -------------------- Char generator (disclaimer, glitch-motd) --------------------
 class CharSpace:
@@ -147,7 +147,7 @@ class CharSpace:
         self.i2c = {i: c for c, i in zip(chars, range(len(chars)))}
         self.V = len(chars)
     def one(self, ch: str):
-        v = np.zeros((self.V,), np.float32); v[self.c2i.get(ch, 0)] = 1.0; return v
+        v = np.zeros((self.V,), np.float16); v[self.c2i.get(ch, 0)] = 1.0; return v
 
 class CharGen:
     def __init__(self, seed_text: str, seed: int = 3):
@@ -176,7 +176,7 @@ class CharGen:
 ACTIONS = ["none", "ghost", "gone", "swap", "hit", "glitch"]
 
 def line_vec(s: str, dim: int = 256):
-    v = np.zeros((dim,), np.float32)
+    v = np.zeros((dim,), np.float16)
     for ch in s: v[hash(ch) % dim] += 1.0
     n = float(np.linalg.norm(v)); return v / (n + 1e-6) if n > 0 else v
 
@@ -209,7 +209,7 @@ TOKEN_RE = re.compile(r"[A-Za-zА-Яа-яЁё0-9_]{2,}")
 def tokenize(text: str): return TOKEN_RE.findall(text.lower())
 
 def hashed_vector(text: str, dim: int = 768):
-    v = np.zeros((dim,), np.float32)
+    v = np.zeros((dim,), np.float16)
     for tok in tokenize(text):
         h = int(hashlib.sha256(tok.encode("utf-8")).hexdigest()[:8], 16)
         v[h % dim] += 1.0
@@ -446,7 +446,8 @@ class AppState:
                  datasets_dir: Path, ttl_events: int = -1):
         self.story_text = story_text
         self.story_lines = story_text.splitlines()
-        self.db = sqlite3.connect(db_path, check_same_thread=False)
+        self.db = sqlite3.connect(db_path, timeout=30, check_same_thread=False)
+        self.last_error_ts = 0.0
         cur = self.db.cursor()
         cur.execute("PRAGMA journal_mode=WAL;"); cur.execute("PRAGMA synchronous=NORMAL;")
         # core tables
@@ -547,7 +548,7 @@ class AppState:
     def _save_vec(self, chunk_id: int, v: np.ndarray):
         cur = self.db.cursor()
         cur.execute("INSERT OR REPLACE INTO cvecs(chunk_id,dim,vec) VALUES(?,?,?)",
-                    (chunk_id, int(v.shape[0]), v.astype(np.float32).tobytes()))
+                    (chunk_id, int(v.shape[0]), v.astype(np.float16).tobytes()))
         self.db.commit()
 
     def _cache_chunks(self):
@@ -558,7 +559,7 @@ class AppState:
         rows = cur.fetchall()
         cache=[]
         for cid, path, a, b, text, dim, blob in rows:
-            v = np.frombuffer(blob, dtype=np.float32, count=dim)
+            v = np.frombuffer(blob, dtype=np.float16, count=dim)
             cache.append((cid, path, a, b, text, v))
         self._chunk_cache = cache
 
@@ -673,8 +674,9 @@ class AppState:
                     cutoff = time.time() - float(self.ttl_events)
                     cur.execute("DELETE FROM events WHERE ts < ?", (cutoff,))
                 self.db.commit()
-            except Exception as e:
-                logging.error(f"Worker loop error: {e}")
+            except Exception:
+                self.last_error_ts = time.time()
+                logging.error("Worker loop error:\n" + traceback.format_exc())
     def enqueue_event(self, ev_type: str, idx: int):
         ip = getattr(g, 'REMOTE_ADDR', '??')
         self.queue.put((ev_type, idx, ip))
@@ -739,13 +741,14 @@ class AppState:
                     self._ingest_story_once()
                     self._ingest_datasets_once()
                     self._cache_chunks()
-                except Exception as e:
-                    logging.error(f"Re-ingest error: {e}")
+                except Exception:
+                    self.last_error_ts = time.time()
+                    logging.error("Re-ingest error:\n" + traceback.format_exc())
 
 # ---------------- Flask app orchestration ----------------
 from flask import request
 
-def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl_events: int):
+def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl_events: int, run_app: bool = True):
     story_text = story_path.read_text(encoding="utf-8")
     app = Flask(__name__, static_folder=str(story_path.parent), static_url_path='/stories')
     st = AppState(story_text, story_path.with_suffix(".db"), name_prefix=name_prefix,
@@ -756,6 +759,22 @@ def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl
     @app.before_request
     def _set_g_ip():
         g.REMOTE_ADDR = request.remote_addr
+
+    @app.after_request
+    def _gzip(resp):
+        ae = request.headers.get("Accept-Encoding", "")
+        if ("gzip" in ae.lower() and
+                200 <= resp.status_code < 300 and
+                not resp.direct_passthrough and
+                not resp.headers.get("Content-Encoding")):
+            data = resp.get_data()
+            if len(data) > 500:
+                co = zlib.compressobj(9, zlib.DEFLATED, 31)
+                gz = co.compress(data) + co.flush()
+                resp.set_data(gz)
+                resp.headers["Content-Encoding"] = "gzip"
+                resp.headers["Content-Length"] = str(len(gz))
+        return resp
 
     @app.get("/")
     def root():
@@ -776,9 +795,10 @@ def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl
             d = request.get_json(force=True, silent=True) or {}
             st.enqueue_event(d.get("type", "hover"), int(d.get("i", 0)))
             return jsonify({"ok": True})
-        except Exception as e:
-            logging.error(f"Event error: {e}")
-            return jsonify({"ok": False, "error": str(e)}), 500
+        except Exception:
+            st.last_error_ts = time.time()
+            logging.error("Event error:\n" + traceback.format_exc())
+            return jsonify({"ok": False, "error": "event"}), 500
 
     @app.post("/feedback")
     def post_feedback():
@@ -794,9 +814,10 @@ def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl
                 if st.rng.random() < 0.6:
                     answer = st.cg.generate(prefix="SUPPERTIME: ", n=120, temp=1.0)
             return jsonify({"ok": True, "answer": answer})
-        except Exception as e:
-            logging.error(f"Feedback error: {e}")
-            return jsonify({"ok": False, "error": str(e)}), 500
+        except Exception:
+            st.last_error_ts = time.time()
+            logging.error("Feedback error:\n" + traceback.format_exc())
+            return jsonify({"ok": False, "error": "feedback"}), 500
 
     @app.post("/version-feedback")
     def version_feedback():
@@ -815,9 +836,10 @@ def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl
                 if st.rng.random() < 0.2:
                     ans = st.cg.generate(prefix="... ", n=60, temp=1.1)
             return jsonify({"ok": True, "answer": ans})
-        except Exception as e:
-            logging.error(f"Version feedback error: {e}")
-            return jsonify({"ok": False, "error": str(e)}), 500
+        except Exception:
+            st.last_error_ts = time.time()
+            logging.error("Version feedback error:\n" + traceback.format_exc())
+            return jsonify({"ok": False, "error": "version"}), 500
 
     @app.get("/metrics")
     def get_metrics():
@@ -842,6 +864,7 @@ def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl
             "avg_action_entropy": float(avg_entropy),
             "active_users": collect["active_users"],
             "last_event_ts": collect["last_event_ts"],
+            "last_error_ts": st.last_error_ts,
         })
 
     @app.get("/rag/search")
@@ -853,6 +876,9 @@ def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl
 
     @app.post("/rag/ingest")
     def rag_ingest():
+        token = request.headers.get("Authorization", "")
+        if request.remote_addr != "127.0.0.1" and token != os.environ.get("RAG_TOKEN"):
+            return jsonify({"ok": False, "error": "unauthorized"}), 403
         st._ingest_story_once()
         st._ingest_datasets_once()
         st._cache_chunks()
@@ -868,16 +894,19 @@ def serve(story_path: Path, port: int, name_prefix: str, datasets_dir: Path, ttl
             gen = st.cg.generate(prefix=prefix, n=280, temp=temp)
             st.efeed().add(gen)
             return jsonify({"echo": gen, "chaos": float(st.pol.chaos)})
-        except Exception as e:
-            logging.error(f"Resonate error: {e}")
-            return jsonify({"ok": False, "error": str(e)}), 500
+        except Exception:
+            st.last_error_ts = time.time()
+            logging.error("Resonate error:\n" + traceback.format_exc())
+            return jsonify({"ok": False, "error": "resonate"}), 500
 
     # collective echo-feed (последние 10 эхов)
     @app.get("/echo-feed")
     def echo_feed():
         return jsonify({"feed": st.efeed().last()})
 
-    app.run(host="0.0.0.0", port=port, threaded=True)
+    if run_app:
+        app.run(host="0.0.0.0", port=port, threaded=True)
+    return app
 
 # ---------------- Utils ----------------
 def main():
@@ -892,9 +921,17 @@ def main():
     if not p.exists(): print("Нет файла:", p); sys.exit(1)
     try:
         serve(p, a.port, name_prefix=a.name, datasets_dir=Path(a.datasets), ttl_events=a.ttl_events)
-    except Exception as e:
-        logging.error(f"Main error: {e}")
+    except Exception:
+        logging.error("Main error:\n" + traceback.format_exc())
         sys.exit(1)
 
 if __name__ == "__main__":
     main()
+
+else:
+    story_path = Path(os.environ.get("STORY_MD", "stories/SUPPERTIME (v2.0).md"))
+    app = serve(story_path, int(os.environ.get("PORT", 8000)),
+                name_prefix=os.environ.get("NAME", "SUPPERTIME"),
+                datasets_dir=Path(os.environ.get("DATASETS", "./datasets")),
+                ttl_events=int(os.environ.get("TTL_EVENTS", -1)),
+                run_app=False)
