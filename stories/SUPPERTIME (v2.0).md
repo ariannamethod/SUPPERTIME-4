@@ -793,6 +793,12 @@ I lit a cigarette with shaking hands. The ember flared, tiny and defiant in the 
 Outside, dawn bled into the alleys. Somewhere ahead, a hill, a crossbeam, a crowd already sharpening its cheers. History grinding into place — hungry for martyrs and for monsters.  
 I exhaled. Rain hissed on the window bars.  
 (resonate_again())  
-For the first time the name Judas tasted like iron in my mouth — bitter, but wholly mine.  
+For the first time the name Judas tasted like iron in my mouth — bitter, but wholly mine.
 
 — by Oleg Ataeff.
+
+--
+
+[SUPPERTIME v1.6](SUPPERTIME_v1.6.html)
+[SUPPERTIME v1.4](SUPPERTIME_v1.4.html)
+[SUPPERTIME cognitive architecture](SUPPERTIME_cognitive_architecture.html)
