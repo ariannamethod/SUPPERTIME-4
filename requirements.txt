@@ -2,3 +2,4 @@ Flask>=2.3
 numpy>=1.23
 gunicorn
 gevent
+flask_cors
