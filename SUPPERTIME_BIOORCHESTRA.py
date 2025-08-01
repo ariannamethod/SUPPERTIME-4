@@ -2,6 +2,8 @@ import os, sys, time, re, json, math, argparse, queue, threading, sqlite3, hashl
 from pathlib import Path
 import numpy as np
 from flask import Flask, request, jsonify, Response, g
+from biology.bone_memory import BoneMemory
+from biology.echo_lung import EchoLung
 
 logging.basicConfig(filename='suppertime.log', level=logging.INFO, format='%(asctime)s %(message)s')
 
@@ -107,11 +109,15 @@ class BioOrchestra:
         self.blood = BloodFlux(iron=0.63)
         self.skin = SkinSheath(sensitivity=0.61)
         self.sense = SixthSense(clarity=0.45)
+        self.memory = BoneMemory(limit=60)
+        self.lung = EchoLung(capacity=4.0)
         self.h2o = 0.0
         self.last_bond = 0.5
     def on_event(self, ev_type: str, line_idx: int):
         nut = 11.5 if ev_type == "hover" else 19.0 if ev_type == "click" else 7.9
-        self.cell.metabolize(nut)
+        mp = self.memory.on_event(ev_type)
+        self.cell.metabolize(nut + mp * 10.0)
+        self.lung.on_event(self.pain.current / 100)
         if ev_type == "click":
             self.pain.inflict(7.1)
             self.skin.ripple(self.pain.current / 120)
@@ -133,9 +139,12 @@ class BioOrchestra:
         self.blood.circulate(dis)
         self.skin.ripple(self.pain.current / 120 + chaos * 0.1)
         self.sense.foresee(chaos)
-        self.cell.metabolize(self.blood.pulse * 2.0)
+        self.lung.on_event(chaos)
+        self.cell.metabolize(self.blood.pulse * 2.0 + self.lung.breath)
         self.pain.inflict(self.skin.quiver * 3.0)
-        chaos = float(np.clip(chaos + self.blood.pulse * 0.02 - self.skin.quiver * 0.03 + self.sense.presage * 0.02, 0.0001, 0.98))
+        chaos = float(np.clip(
+            chaos + self.blood.pulse * 0.02 - self.skin.quiver * 0.03 + self.sense.presage * 0.02 + self.lung.breath * 0.01,
+            0.0001, 0.98))
         return chaos, acts
     def metrics(self):
         return {
@@ -145,7 +154,9 @@ class BioOrchestra:
             "love_bond": float(self.last_bond),
             "pulse": float(self.blood.pulse),
             "shiver": float(self.skin.quiver),
-            "premonition": float(self.sense.presage)
+            "premonition": float(self.sense.presage),
+            "bone_memory": float(self.memory.get()),
+            "breath": float(self.lung.get())
         }
 # -------------------- Identity & seeds --------------------
 def derive_identity(story_text: str, prefix="SUPPERTIME") -> str:
